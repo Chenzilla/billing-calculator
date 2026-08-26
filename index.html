@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>What Can I Bill?</title>
+<meta name="description" content="Interactive primary-care billing calculator — Medicare vs commercial, wellness, problem, and TCM visits, with wRVUs, patient cost, and claim modifiers.">
+</head>
+<body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F6F8F6; --surface:#FFFFFF; --surface2:#EEF3F0; --ink:#1B2422; --muted:#5C6B66;
+  --line:#D9E2DD; --accent:#0E6E5C; --accent-ink:#0A5346; --accent-soft:#E1EFEA;
+  --warn:#8A5A00; --warn-soft:#F6EBD2; --cost:#A33B2E; --cost-soft:#F7E7E2;
+  --zero:#0E6E5C; --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  --sans:'IBM Plex Sans',system-ui,-apple-system,sans-serif;
+  --disp:'Fraunces',Georgia,serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#111716; --surface:#1A211F; --surface2:#212B28; --ink:#E7EDEA; --muted:#94A39D;
+    --line:#2C3833; --accent:#4CC2A9; --accent-ink:#7ED8C4; --accent-soft:#173129;
+    --warn:#E4B45D; --warn-soft:#33290F; --cost:#E58A79; --cost-soft:#3A1F19; --zero:#4CC2A9;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#111716; --surface:#1A211F; --surface2:#212B28; --ink:#E7EDEA; --muted:#94A39D;
+  --line:#2C3833; --accent:#4CC2A9; --accent-ink:#7ED8C4; --accent-soft:#173129;
+  --warn:#E4B45D; --warn-soft:#33290F; --cost:#E58A79; --cost-soft:#3A1F19; --zero:#4CC2A9;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;padding:32px 20px 80px}
+.wrap{max-width:1060px;margin:0 auto}
+header.top{margin-bottom:26px}
+h1{font-family:var(--disp);font-weight:600;font-size:clamp(28px,4vw,40px);letter-spacing:-.01em;text-wrap:balance}
+.sub{color:var(--muted);max-width:58ch;margin-top:6px}
+.toggles{display:flex;flex-wrap:wrap;gap:14px;margin:22px 0 26px}
+.seg{display:flex;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:3px}
+.seg button{font:inherit;font-weight:500;border:0;background:transparent;color:var(--muted);padding:8px 18px;border-radius:8px;cursor:pointer}
+.seg button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.seg button.on .dot{background:var(--accent)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--line);margin-right:8px;vertical-align:1px}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:22px;align-items:start}
+@media(max-width:840px){.cols{grid-template-columns:minmax(0,1fr)}.summary{position:static}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 18px 14px;margin-bottom:18px}
+.card h2{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:12px}
+.ghead{font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--accent-ink);margin:14px 0 4px;padding:0 10px}
+.ghead:first-child{margin-top:0}
+.helpbtn{float:right;font:inherit;font-size:12.5px;font-weight:500;background:var(--accent-soft);color:var(--accent-ink);border:1px solid var(--accent);border-radius:999px;padding:4px 12px;cursor:pointer}
+.helpbtn:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.helper{clear:both;background:var(--surface2);border:1px solid var(--line);border-radius:9px;padding:14px;margin:10px 0 14px}
+.helper .hq{font-size:13px;font-weight:500;margin:10px 0 4px}
+.helper .hq:first-child{margin-top:0}
+.helper select,.helper input[type=number]{font:inherit;font-size:13px;width:100%;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 9px}
+.helper .hseg{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:2px;margin:2px 0}
+.helper .hseg button{font:inherit;font-size:12.5px;border:0;background:transparent;color:var(--muted);padding:4px 12px;border-radius:6px;cursor:pointer}
+.helper .hseg button.on{background:var(--accent-soft);color:var(--accent-ink)}
+.hrec{margin-top:12px;padding:10px 12px;border-radius:8px;background:var(--surface);border:1px dashed var(--accent);font-size:13.5px}
+.hopt{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 12px;margin:6px 0;font-size:13px;cursor:pointer;line-height:1.45}
+.hopt:hover{border-color:var(--accent)}
+.hopt.sel{background:var(--accent-soft);border-color:var(--accent)}
+.hopt b{font-weight:600}
+.hopt:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.hrec .code{font-size:15px}
+.hrec button{font:inherit;font-size:12.5px;font-weight:500;background:var(--accent);color:#fff;border:0;border-radius:7px;padding:5px 12px;cursor:pointer;margin-left:10px}
+.hgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.row{display:flex;gap:12px;align-items:flex-start;padding:10px 10px;border-radius:9px;cursor:pointer;border:1px solid transparent}
+.row:hover{background:var(--surface2)}
+.row.sel{background:var(--accent-soft);border-color:var(--accent)}
+.row input{margin-top:4px;accent-color:var(--accent);flex:none}
+.row.dis{opacity:.55;cursor:not-allowed}
+.row.dis:hover{background:transparent}
+.rbody{flex:1;min-width:0}
+.rhead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.code{font-family:var(--mono);font-weight:500;font-size:13.5px;color:var(--accent-ink)}
+.rname{font-weight:500}
+.rdesc{color:var(--muted);font-size:13px;margin-top:2px}
+.why{color:var(--warn);font-size:12.5px;margin-top:3px}
+.chips{display:flex;gap:6px;flex:none;flex-direction:column;align-items:flex-end}
+.chip{font-family:var(--mono);font-size:11.5px;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.chip.rvu{background:var(--surface2);color:var(--ink);border:1px solid var(--line)}
+.chip.zero{background:var(--accent-soft);color:var(--accent-ink)}
+.chip.pay{background:var(--cost-soft);color:var(--cost)}
+.chip.dep{background:var(--warn-soft);color:var(--warn)}
+.chip.freq{background:transparent;border:1px dashed var(--line);color:var(--muted)}
+.qty{display:inline-flex;align-items:center;gap:8px;margin-top:6px}
+.qty button{font:inherit;width:24px;height:24px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;line-height:1}
+.qty button:focus-visible{outline:2px solid var(--accent)}
+.qty span{font-family:var(--mono);font-size:13px;min-width:14px;text-align:center}
+select{font:inherit;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 10px;width:100%}
+.summary{position:sticky;top:16px}
+.total{font-family:var(--disp);font-weight:600;font-size:44px;line-height:1;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.total small{font-family:var(--sans);font-size:13px;font-weight:500;color:var(--muted);letter-spacing:0}
+.sumline{display:flex;justify-content:space-between;gap:10px;padding:5px 0;font-size:13.5px;border-bottom:1px dashed var(--line)}
+.sumline:last-child{border-bottom:0}
+.sumline .c{font-family:var(--mono);color:var(--accent-ink);flex:none}
+.sumline .v{font-family:var(--mono);font-variant-numeric:tabular-nums;flex:none}
+.sumline .n{color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.costhead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.costbig{font-family:var(--mono);font-size:20px;font-weight:500;font-variant-numeric:tabular-nums}
+.claim{font-family:var(--mono);font-size:13px;background:var(--surface2);border:1px solid var(--line);border-radius:9px;padding:10px 12px;overflow-x:auto;white-space:nowrap}
+.note{font-size:12.5px;color:var(--muted);margin-top:8px}
+.note b{color:var(--ink);font-weight:500}
+.alert{background:var(--warn-soft);color:var(--warn);border-radius:9px;padding:9px 12px;font-size:13px;margin-top:10px}
+.excl .row{cursor:default}
+.excl .row:hover{background:transparent}
+footer{margin-top:30px;color:var(--muted);font-size:12.5px;max-width:72ch}
+@media (prefers-reduced-motion: no-preference){.card,.chip{transition:background .15s,border-color .15s}}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <h1>What Can I Bill?</h1>
+  <p class="sub">Pick the payer and visit type, choose what happened in the room, and see total work RVUs, what the patient pays, and the claim with modifiers.</p>
+</header>
+
+<div class="toggles" role="group" aria-label="Scenario">
+  <div class="seg" id="segPayer">
+    <button data-v="medicare" class="on"><span class="dot"></span>Medicare</button>
+    <button data-v="commercial"><span class="dot"></span>Commercial</button>
+  </div>
+  <div class="seg" id="segType">
+    <button data-v="well" class="on"><span class="dot"></span>Wellness visit</button>
+    <button data-v="sick"><span class="dot"></span>Sick / problem visit</button>
+    <button data-v="tcm"><span class="dot"></span>TCM (post-discharge)</button>
+  </div>
+</div>
+
+<div class="cols">
+<div>
+  <div class="card"><h2 id="baseTitle" style="display:inline-block">Base visit</h2>
+    <button id="helpBtn" class="helpbtn">Which code? →</button>
+    <div id="helper"></div>
+    <div id="baseList"></div></div>
+  <div class="card" id="emCard"><h2 style="display:inline-block">Problem E/M on the same day <span style="text-transform:none;letter-spacing:0">(gets modifier 25)</span></h2>
+    <button id="helpBtnEM" class="helpbtn">Which level? →</button>
+    <div id="helperEM"></div>
+    <select id="emSel" aria-label="Add-on E/M level"></select>
+    <p class="note" id="emNote"></p>
+  </div>
+  <div class="card"><h2>Add-on services</h2><div id="addList"></div></div>
+  <div class="card excl"><h2>Not billable in this scenario</h2><div id="exclList"></div></div>
+  <div class="card excl"><h2>Beyond the visit — recurring &amp; episode codes worth knowing</h2>
+    <div class="row"><div class="rbody"><div class="rhead"><span class="code">99495 / 99496</span><span class="rname">Transitional care management</span></div><div class="rdesc">Post-discharge: contact within 2 business days, visit within 14 / 7 days, 30 days of management. Once per discharge. Both payers.</div></div><div class="chips"><span class="chip rvu">2.78 / 3.79</span></div></div>
+    <div class="row"><div class="rbody"><div class="rhead"><span class="code">99483</span><span class="rname">Cognitive assessment &amp; care plan</span></div><div class="rdesc">Standalone dementia evaluation — typically 60+ min of total same-date time (face-to-face plus record review, historian, care-plan writing). No same-day E/M or ACP. Roughly every 180 days. Both payers.</div></div><div class="chips"><span class="chip rvu">3.84</span></div></div>
+    <div class="row"><div class="rbody"><div class="rhead"><span class="code">99490 / 99491</span><span class="rname">Chronic care management, monthly</span></div><div class="rdesc">2+ chronic conditions, patient consent: 20 min clinical-staff time (99490) or 30 min physician time (99491) per calendar month.</div></div><div class="chips"><span class="chip rvu">1.00 / 1.50</span></div></div>
+    <div class="row"><div class="rbody"><div class="rhead"><span class="code">99484</span><span class="rname">Behavioral health integration, monthly</span></div><div class="rdesc">20 min/month managing a behavioral condition (e.g., the depression your PHQ-9s find) with a care plan and tracking.</div></div><div class="chips"><span class="chip rvu">0.93</span></div></div>
+    <div class="row"><div class="rbody"><div class="rhead"><span class="code">G3002</span><span class="rname">Chronic pain management, monthly</span></div><div class="rdesc">Medicare: 30 min/month for chronic pain — assessment, plan, medication management.</div></div><div class="chips"><span class="chip rvu">1.45</span></div></div>
+    <div class="row"><div class="rbody"><div class="rhead"><span class="code">99421–99423</span><span class="rname">Portal message E/M (e-visits)</span></div><div class="rdesc">Patient-initiated digital messages, 5–10 / 11–20 / 21+ min of your time over 7 days.</div></div><div class="chips"><span class="chip rvu">0.25+</span></div></div>
+    <div class="row"><div class="rbody"><div class="rhead"><span class="code">G0556–G0558</span><span class="rname">Advanced primary care management</span></div><div class="rdesc">Medicare's 2025 monthly APCM bundle (replaces CCM/PCM stacking; tiered by complexity). Practice-level payment — carries no wRVU, so check how your comp plan credits it.</div></div><div class="chips"><span class="chip rvu">no wRVU</span></div></div>
+    <div class="row"><div class="rbody"><div class="rhead"><span class="code">99091</span><span class="rname">Physiologic data review, 30 min / month</span></div><div class="rdesc">Collecting and interpreting patient-generated data — home BP logs, glucometer downloads — 30 min per 30 days, no visit required. Both payers.</div></div><div class="chips"><span class="chip rvu">1.10</span></div></div>
+    <div class="row"><div class="rbody"><div class="rhead"><span class="code">93793</span><span class="rname">Warfarin INR management</span></div><div class="rdesc">Reviewing an INR, adjusting the dose, and communicating the plan — per encounter, no visit required.</div></div><div class="chips"><span class="chip rvu">0.18</span></div></div>
+    <div class="row"><div class="rbody"><div class="rhead"><span class="code">17110</span><span class="rname">Benign lesion destruction, 1–14</span></div><div class="rdesc">Cryo of warts, skin tags, seborrheic keratoses — an office procedure with real work RVU (17111 covers 15+ lesions).</div></div><div class="chips"><span class="chip rvu">0.68</span></div></div>
+    <div class="row"><div class="rbody"><div class="rhead"><span class="code">98000–98016</span><span class="rname">Telemedicine E/M codes (2025)</span></div><div class="rdesc">Audio-video (98000–07) and audio-only (98008–15) visit codes mirroring the E/M ladder, plus 98016 brief virtual check-in. Commercial payers vary; Medicare still wants 99202–15 with modifier 95 for video (98016 replaced G2012).</div></div><div class="chips"><span class="chip rvu">≈ E/M</span></div></div>
+    <div class="row"><div class="rbody"><div class="rhead"><span class="code">G0180 / G0179</span><span class="rname">Home health certification / recert</span></div><div class="rdesc">Signing and reviewing a Medicare home health plan of care — desk work, patient not present. Once per 60-day episode.</div></div><div class="chips"><span class="chip rvu">0.65 / 0.44</span></div></div>
+    <div class="row"><div class="rbody"><div class="rhead"><span class="code">96160 / 96161</span><span class="rname">Health risk assessment instruments</span></div><div class="rdesc">Patient-focused / caregiver-focused standardized HRA — the commercial-side sibling of 96127. Practice expense only.</div></div><div class="chips"><span class="chip rvu">0.00</span></div></div>
+  </div>
+</div>
+
+<div class="summary">
+  <div class="card">
+    <h2>Total work RVUs</h2>
+    <div class="total" id="totRvu">0.00<small> wRVUs</small></div>
+    <div id="lines" style="margin-top:12px"></div>
+  </div>
+  <div class="card">
+    <h2>Patient cost</h2>
+    <div class="costhead"><span id="costLabel" style="font-size:13px;color:var(--muted)"></span><span class="costbig" id="costBig"></span></div>
+    <div id="costLines"></div>
+    <p class="note" id="costNote"></p>
+  </div>
+  <div class="card">
+    <h2>Claim preview</h2>
+    <div class="claim" id="claim"></div>
+    <div id="warns"></div>
+  </div>
+</div>
+</div>
+
+<div class="card" style="margin-top:4px">
+  <h2>Annualize it</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:14px">
+    <label style="font-size:13px;color:var(--muted)">Half-days of clinic / week
+      <input type="number" id="anHd" min="1" max="10" step="1" value="6" style="width:100%;margin-top:4px;font:inherit;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 10px"></label>
+    <label style="font-size:13px;color:var(--muted)">Patients per half-day
+      <input type="number" id="anPpd" min="1" max="20" step="1" value="6" style="width:100%;margin-top:4px;font:inherit;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 10px"></label>
+    <label style="font-size:13px;color:var(--muted)">Avg wRVUs per visit
+      <input type="number" id="anWpv" min="0.5" max="8" step="0.1" value="3.5" style="width:100%;margin-top:4px;font:inherit;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 10px"></label>
+    <label style="font-size:13px;color:var(--muted)">Weeks of clinic / year
+      <input type="number" id="anWk" min="20" max="52" step="1" value="46" style="width:100%;margin-top:4px;font:inherit;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 10px"></label>
+  </div>
+  <button id="anUse" style="font:inherit;font-size:13px;background:var(--accent-soft);color:var(--accent-ink);border:1px solid var(--accent);border-radius:8px;padding:6px 12px;cursor:pointer;margin-bottom:14px">Use the visit built above as the average</button>
+  <div style="display:flex;gap:28px;flex-wrap:wrap;align-items:baseline">
+    <div><div style="font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)">Annual wRVUs</div><div class="total" id="anTot" style="font-size:38px">0</div></div>
+    <div><div style="font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)">Per week</div><div style="font-family:var(--mono);font-size:22px;font-variant-numeric:tabular-nums" id="anWkOut">0</div></div>
+    <div><div style="font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)">vs full-time IM median</div><div style="font-family:var(--mono);font-size:22px;font-variant-numeric:tabular-nums" id="anMed">—</div></div>
+  </div>
+  <p class="note" id="anNote">Full-time general internal medicine median is roughly 4,700–5,000 wRVUs/year (MGMA/AMGA), typically on 8–10 half-days a week.</p>
+</div>
+<footer>wRVU values verified against the 2026 CMS Physician Fee Schedule (Aug 2026). Medicare $0 items are ACA §4104 preventive services whose deductible and coinsurance are waived regardless of visit type; dollar figures are estimates from national non-facility allowables (coinsurance = 20%, assumes Part B deductible met) and typical commercial plan design. Verify rates against the current-year fee schedule and your comp plan before relying on them. Educational tool — not billing or coding advice for a specific claim.</footer>
+</div>
+
+<script>
+const W={ "99202":.93,"99203":1.60,"99204":2.60,"99205":3.50,"99211":.18,"99212":.70,"99213":1.30,"99214":1.92,"99215":2.80,
+"99385":1.92,"99386":2.33,"99387":2.50,"99395":1.75,"99396":1.90,"99397":2.00,
+"G0402":2.60,"G0438":2.60,"G0439":1.92,"99497":1.50,"G0444":.18,"G0442":.18,"G0443":.60,"G0136":.18,"G0447":.60,"G0537":.18,"G0538":.18,
+"99406":.24,"99407":.50,"96127":0,"99401":.48,"99402":.98,"99403":1.46,"99404":1.95,"G2211":.33,"G2212":.61,"99417":.61,"G0011":.45,"G0445":.60,"G0446":.60,"90471":.17,"99495":2.78,"99496":3.79,"99408":.65,"99498":1.40 };
+const A={ "99202":75,"99203":115,"99204":170,"99205":225,"99211":25,"99212":60,"99213":95,"99214":132,"99215":186,
+"G2211":16,"G2212":30,"99497":82,"96127":5,"G0402":170,"G0438":174,"G0439":138,"G0136":22,"G0538":34,"99495":220,"99496":299,"99498":78 };
+
+const BASES={
+ "medicare|well":[
+  {c:"G0402",f:"once ever",n:"Welcome to Medicare (IPPE)",d:"Once ever, within first 12 months of Part B enrollment. Includes EKG referral, safety and depression review."},
+  {c:"G0438",f:"once/lifetime",n:"Annual wellness visit, initial",d:"First AWV — once per lifetime, after the first 12 months. Builds the personalized prevention plan."},
+  {c:"G0439",f:"q12mo",n:"Annual wellness visit, subsequent",d:"Every year thereafter (11 full months after the last). Your most common Medicare wellness base.",sel:1}],
+ "commercial|well":[
+  {c:"99385",f:"1/yr",n:"Preventive, new patient 18–39",d:"Comprehensive preventive medicine visit, new patient."},
+  {c:"99386",f:"1/yr",n:"Preventive, new patient 40–64",d:"Comprehensive preventive medicine visit, new patient."},
+  {c:"99387",f:"1/yr",n:"Preventive, new patient 65+",d:"Comprehensive preventive medicine visit, new patient."},
+  {c:"99395",f:"1/yr",n:"Preventive, established 18–39",d:"Periodic preventive visit, established patient.",sel:1},
+  {c:"99396",f:"1/yr",n:"Preventive, established 40–64",d:"Periodic preventive visit, established patient."},
+  {c:"99397",f:"1/yr",n:"Preventive, established 65+",d:"Periodic preventive visit, established patient."}],
+ "tcm":[
+  {c:"99495",f:"per discharge",n:"TCM, moderate complexity",d:"Interactive contact within 2 business days of discharge, face-to-face visit within 14 days, medication reconciliation by the visit, 30 days of care management. Moderate-complexity decision making.",sel:1},
+  {c:"99496",f:"per discharge",n:"TCM, high complexity",d:"Same structure, but high-complexity decision making and the visit must happen within 7 days of discharge."}],
+ "sick":[
+  {c:"99212",f:"per visit",n:"Established, straightforward",d:"Minor, self-limited problem."},
+  {c:"99213",f:"per visit",n:"Established, low complexity",d:"1–2 stable problems, low-risk management."},
+  {c:"99214",f:"per visit",n:"Established, moderate complexity",d:"Chronic disease with progression, new problem with workup, or prescription management. Your workhorse code.",sel:1},
+  {c:"99215",f:"per visit",n:"Established, high complexity",d:"Severe exacerbation, high-risk management, or 40+ min total time."},
+  {c:"99203",f:"per visit",n:"New patient, low complexity",d:"New patient, low-risk problem."},
+  {c:"99204",f:"per visit",n:"New patient, moderate complexity",d:"New patient, moderate complexity — most new-patient visits."},
+  {c:"99205",f:"per visit",n:"New patient, high complexity",d:"New patient, high complexity or 60+ min total time."}]
+};
+
+const LVL5=s=>(s.base==="99215"||s.base==="99205"||s.em==="99215"||s.em==="99205");
+const ADDONS=[
+ {g:"Complexity &amp; time",c:"G2211",f:"per E/M",n:"Longitudinal care add-on",d:"You are the patient's continuing focal point of care. Attach to office E/M visits.",
+  when:s=>s.hasEM?(s.p==="medicare"?"ok":"dep"):"Needs an office E/M on the claim",
+  depWhy:"Commercial adoption is payer-dependent — many plans deny. Confirm per payer."},
+ {g:"Complexity &amp; time",c:"G2212",f:"per 15 min",n:"Prolonged visit, each 15 min",d:"Time beyond the level-5 maximum. Medicare's prolonged code.",
+  when:s=>s.p!=="medicare"?"no":(LVL5(s)?"ok":"Requires a level-5 E/M (99205/99215) billed by time")},
+ {g:"Complexity &amp; time",c:"99417",f:"per 15 min",n:"Prolonged visit, each 15 min",d:"Time beyond the level-5 maximum. The CPT prolonged code commercial payers use.",
+  when:s=>s.p!=="commercial"?"no":(LVL5(s)?"ok":"Requires a level-5 E/M (99205/99215) billed by time")},
+ {g:"Screenings &amp; assessments",c:"G0444",f:"q12mo",n:"Depression screening, 15 min",d:"Annual, PHQ-based, with documented follow-up plan. This is the code that turns your PHQ-9 work into wRVUs on Medicare.",
+  when:s=>s.p!=="medicare"?"no":(s.base==="G0438"||s.base==="G0402")?"Included in the initial AWV / IPPE — billable only with subsequent AWVs or separately":"ok"},
+ {g:"Screenings &amp; assessments",c:"G0442",f:"q12mo",n:"Alcohol misuse screening, 15 min",d:"Annual AUDIT-C-style screening.",when:s=>s.p==="medicare"?"ok":"no"},
+ {g:"Screenings &amp; assessments",c:"G0537",f:"q12mo",n:"ASCVD risk assessment",d:"Standardized 10-year cardiovascular risk tool (e.g., PREVENT) for patients with risk factors and no ASCVD diagnosis. 5–15 min, once per 12 months. New for 2025.",when:s=>s.p==="medicare"?"ok":"no"},
+ {g:"Screenings &amp; assessments",c:"G0136",f:"q6mo",n:"Physical activity &amp; nutrition assessment",d:"Standardized instrument, 5–15 min, max once per 6 months. Redefined for 2026 — this was the SDOH risk assessment code through 2025. $0 only with an AWV; cost-shares at problem visits.",when:s=>s.p==="medicare"?"ok":"no"},
+ {g:"Screenings &amp; assessments",c:"96127",f:"per instrument",n:"Behavioral instrument w/ scoring",d:"PHQ-9, GAD-7, AUDIT — per instrument. Carries no physician work RVU; practice-expense only.",qty:1,when:()=>"ok",
+  info:(s,add)=>s.p==="medicare"&&(add["G0444"]||add["G0442"]||s.base==="G0438"||s.base==="G0402")?"The PHQ-9 and AUDIT are already inside G0444 / G0442 (and the initial AWV) — count only additional instruments here (e.g., a GAD-7), billed with mod 59.":""},
+ {g:"Counseling &amp; prevention",c:"99497",f:"as needed",n:"Advance care planning, first 30 min",d:"Discussing goals of care, health care proxy, MOLST. Needs ~16+ min of dedicated discussion.",
+  when:s=>s.p==="medicare"?"ok":"dep",depWhy:"Commercial coverage varies; often cost-shares."},
+ {g:"Counseling &amp; prevention",c:"99498",f:"per extra 30 min",n:"Advance care planning, each add'l 30 min",d:"Add-on to 99497 for long goals-of-care conversations (~74+ min total ACP time).",
+  when:s=>S.add["99497"]?(s.p==="medicare"?"ok":"dep"):"Add-on — check 99497 above first",depWhy:"Commercial coverage varies; often cost-shares."},
+ {g:"Counseling &amp; prevention",c:"G0447",f:"22/yr",n:"Obesity counseling, 15 min",d:"Face-to-face behavioral counseling, BMI ≥30 documented. Up to 22/year on Medicare's schedule.",when:s=>s.p==="medicare"?"ok":"no"},
+ {g:"Counseling &amp; prevention",c:"G0443",f:"4/yr",n:"Alcohol misuse counseling, 15 min",d:"Brief behavioral counseling — requires a positive G0442 screen. Up to 4/year.",when:s=>s.p==="medicare"?"ok":"no"},
+ {g:"Counseling &amp; prevention",c:"G0446",f:"q12mo",n:"Intensive behavioral therapy for CVD, 15 min",d:"Annual CVD-risk counseling (aspirin, BP, diet) — still active alongside the newer ASCVD codes; don't bill both for the same work.",when:s=>s.p==="medicare"?"ok":"no"},
+ {g:"Counseling &amp; prevention",c:"G0445",f:"2/yr",n:"STI prevention counseling, 30 min",d:"High-intensity behavioral counseling for patients at increased STI risk. Up to twice a year.",when:s=>s.p==="medicare"?"ok":"no"},
+ {g:"Counseling &amp; prevention",c:"G0011",f:"8/yr",n:"HIV PrEP counseling, 15–30 min",d:"Physician counseling for PrEP — risk assessment, risk reduction, adherence. Part B additional preventive service since late 2024; up to 8 sessions/12 months.",when:s=>s.p==="medicare"?"ok":"no"},
+ {g:"Counseling &amp; prevention",c:"99401",f:"per plan",n:"Preventive counseling, 15 min",d:"Lifestyle risk-factor counseling (obesity, diet/activity, USPSTF A/B topics). The commercial mirror of G0447.",
+  when:s=>s.p==="medicare"?"no":(s.t==="well"?"Bundled into the preventive visit when done the same day":"ok")},
+ {g:"Counseling &amp; prevention",c:"99402",f:"per plan",n:"Preventive counseling, 30 min",d:"The 30-minute tier — same rules as 99401, double the time, double the credit.",
+  when:s=>s.p==="medicare"?"no":(s.t==="well"?"Bundled into the preventive visit when done the same day":"ok")},
+ {g:"Counseling &amp; prevention",c:"99403",f:"per plan",n:"Preventive counseling, 45 min",d:"45-minute tier — e.g., an extended lifestyle-medicine or weight-management session.",
+  when:s=>s.p==="medicare"?"no":(s.t==="well"?"Bundled into the preventive visit when done the same day":"ok")},
+ {g:"Counseling &amp; prevention",c:"99404",f:"per plan",n:"Preventive counseling, 60 min",d:"60-minute tier — a full dedicated prevention session.",
+  when:s=>s.p==="medicare"?"no":(s.t==="well"?"Bundled into the preventive visit when done the same day":"ok")},
+ {g:"Counseling &amp; prevention",c:"99408",f:"typ. 1/yr",n:"Alcohol/substance screening &amp; brief intervention, 15–30 min",d:"SBIRT — structured screen (AUDIT/DAST) plus brief intervention. The commercial-side sibling of G0442/G0443; mod 33 as a USPSTF preventive service.",
+  when:s=>s.p==="commercial"?"ok":"no"},
+ {g:"Counseling &amp; prevention",c:"99406",f:"8 sessions/yr",n:"Tobacco cessation, 3–10 min",d:"Intermediate counseling for a current tobacco user.",when:()=>"ok"},
+ {g:"Counseling &amp; prevention",c:"99407",f:"8 sessions/yr",n:"Tobacco cessation, over 10 min",d:"Intensive counseling — document minutes.",when:()=>"ok"},
+ {g:"Procedures &amp; monthly",c:"90471",f:"per vaccine",n:"Immunization administration, first vaccine",d:"In-office vaccine administration (commercial and Medicare Part B vaccines; Medicare flu/pneumo/HepB use G0008–G0010 at the same value).",when:()=>"ok"},
+ {g:"Procedures &amp; monthly",c:"G0538",f:"monthly",n:"ASCVD risk management, per month",d:"Monthly care-plan management for intermediate/high-risk patients identified by G0537 — risk factors, shared decision-making, clinical staff time.",when:s=>s.p==="medicare"?"ok":"no"}
+];
+
+const EXCL={
+ "medicare|well":[["99381–99397","Routine preventive visits are statutorily non-covered by Medicare — the patient pays the full charge. Use the AWV G-codes instead."],
+  ["99401–99404","Preventive counseling CPTs are excluded from Medicare. Use G0447 / G0442–43 / 99406–07."],
+  ["99417","Medicare requires G2212 for prolonged time instead."]],
+ "medicare|sick":[["99401–99404","Excluded from Medicare — counsel via G0447, G0443, or 99406/07."],
+  ["99417","Medicare requires G2212 instead."]],
+ "commercial|well":[["G0402 / G0438 / G0439","AWV codes are a Medicare-only benefit — commercial wellness is the 99381–99397 series."],
+  ["G0444 / G0442 / G0443 / G0136 / G0537 / G0538","Medicare screening &amp; risk-management G-codes; commercial payers expect the work inside the preventive visit or via 96127."],
+  ["G0447","Frequently denied by commercial plans — the service is covered, but as 99401–99404 with mod 33."],
+  ["99401–99404","Not payable the same day as a preventive visit — the counseling is bundled. Bill them on problem-visit days."],
+  ["G2212","Commercial plans use CPT 99417 for prolonged time."]],
+ "commercial|sick":[["G0447 / G0444 / G0442 / G0136 / G0537 / G0538","Medicare G-codes — commercial equivalents are 99401-33 and 96127."],
+  ["G2212","Use 99417 with commercial payers."]],
+ "medicare|tcm":[["99202–99215","The TCM visit's E/M work is bundled into 99495/99496 — no separate office E/M for that encounter (a later unrelated visit in the 30 days bills normally)."],
+  ["G2211 / G2212","Attach only to office E/M codes — TCM isn't one."],
+  ["G0438 / G0439","An AWV due during the TCM window is billable, but schedule and document it as its own encounter."]],
+ "commercial|tcm":[["99202–99215","The TCM visit's E/M work is bundled into 99495/99496 — no separate office E/M for that encounter."],
+  ["G2211 / 99417","Attach only to office E/M codes — TCM isn't one."],
+  ["99381–99397","A preventive visit due during the TCM window is billable, but as its own encounter."]]
+};
+
+let S={p:"medicare",t:"well",base:"G0439",em:"",add:{},q96127:1,help:false};
+
+function baseList(){return S.t==="well"?BASES[S.p+"|well"]:BASES[S.t==="tcm"?"tcm":"sick"];}
+function scen(){return {p:S.p,t:S.t,base:S.base,em:S.em,hasEM:S.t==="sick"||!!S.em};}
+
+function seg(id,key){document.querySelectorAll("#"+id+" button").forEach(b=>{
+  b.classList.toggle("on",b.dataset.v===S[key]);
+  b.onclick=()=>{if(S[key]===b.dataset.v)return;S[key]=b.dataset.v;const bl=baseList();S.base=(bl.find(x=>x.sel)||bl[0]).c;S.em="";S.add={};S.q96127=1;H={enr:null,prior:null,cage:"",cnew:"est",ptype:"est",prob:"",data:"",risk:"",time:"",days:"",tmdm:"",ptypeE:"est",probE:"",dataE:"",riskE:"",timeE:""};render();};
+});}
+
+function chipFor(code,status){
+  if(status==="dep")return '<span class="chip dep">plan-dep.</span>';
+  const zeroMed=["G0402","G0438","G0439","G0444","G0442","G0443","G0447","G0537","G0446","G0445","G0011","90471","99406","99407"];
+  if(S.p==="medicare"){
+    if(zeroMed.includes(code))return '<span class="chip zero">$0</span>';
+    if(code==="99497"||code==="99498"||code==="G0136")return (S.t==="well")?'<span class="chip zero">$0 w/ AWV</span>':'<span class="chip pay">~$'+Math.round(A[code]*.2)+'</span>';
+    const a=A[code];return a?'<span class="chip pay">~$'+Math.round(a*.2)+'</span>':'<span class="chip pay">20%</span>';
+  }
+  const zeroCom=["99385","99386","99387","99395","99396","99397","99401","99402","99403","99404","99408","90471","99406","99407"];
+  if(zeroCom.includes(code))return '<span class="chip zero">$0</span>';
+  if(code==="96127")return S.t==="well"?'<span class="chip zero">$0</span>':'<span class="chip dep">plan-dep.</span>';
+  if(code==="99417"||code==="99497")return '<span class="chip pay">cost-share</span>';
+  return '<span class="chip pay">copay</span>';
+}
+
+function render(){
+  seg("segPayer","p");seg("segType","t");
+  document.getElementById("baseTitle").textContent=S.t==="well"?(S.p==="medicare"?"Base visit — Medicare wellness":"Base visit — commercial preventive"):(S.t==="tcm"?"Base visit — transitional care management":"Base visit — office E/M");
+  const bl=baseList();
+  document.getElementById("baseList").innerHTML=bl.map(b=>`
+   <label class="row ${S.base===b.c?"sel":""}"><input type="radio" name="base" value="${b.c}" ${S.base===b.c?"checked":""}>
+   <div class="rbody"><div class="rhead"><span class="code">${b.c}</span><span class="rname">${b.n}</span></div><div class="rdesc">${b.d}</div></div>
+   <div class="chips"><span class="chip rvu">${W[b.c].toFixed(2)} wRVU</span>${chipFor(b.c,"ok")}${b.f?`<span class="chip freq">${b.f}</span>`:""}</div></label>`).join("");
+  document.querySelectorAll('input[name=base]').forEach(i=>i.onchange=()=>{S.base=i.value;render();});
+  const hb=document.getElementById("helpBtn");
+  hb.onclick=()=>{S.help=!S.help;render();};
+  hb.textContent=S.help?"Close helper ×":"Which code? →";
+  document.getElementById("helper").innerHTML=helperHTML();
+  bindHelper();
+
+  const emCard=document.getElementById("emCard");
+  if(S.t==="well"){
+    emCard.style.display="";
+    const opts=[["","None — wellness only"],["99212","99212 — established, straightforward (0.70)"],["99213","99213 — established, low (1.30)"],["99214","99214 — established, moderate (1.92)"],["99215","99215 — established, high (2.80)"],["99203","99203 — new pt, low (1.60)"],["99204","99204 — new pt, moderate (2.60)"],["99205","99205 — new pt, high (3.50)"]];
+    document.getElementById("emSel").innerHTML=opts.map(o=>`<option value="${o[0]}" ${S.em===o[0]?"selected":""}>${o[1]}</option>`).join("");
+    document.getElementById("emSel").onchange=e=>{S.em=e.target.value;render();};
+    const hbE=document.getElementById("helpBtnEM");
+    hbE.onclick=()=>{S.helpEM=!S.helpEM;render();};
+    hbE.textContent=S.helpEM?"Close helper ×":"Which level? →";
+    document.getElementById("helperEM").innerHTML=emHelperHTML();
+    bindHelper();
+    document.getElementById("emNote").innerHTML=S.em?
+      (S.p==="medicare"?"The E/M portion <b>does</b> cost-share — deductible + 20% coinsurance — even though the wellness visit is $0. This is the classic surprise-bill conversation.":"The E/M portion is subject to the plan's normal office copay/deductible even though the physical is $0. Warning the patient up front prevents the angry portal message.")
+      :"Addressing a distinct problem (needs its own assessment and plan) supports a separate E/M with modifier 25.";
+  } else emCard.style.display="none";
+
+  const sc=scen();
+  let lastG="";
+  document.getElementById("addList").innerHTML=ADDONS.map(a=>{
+    const st=a.when(sc);if(st==="no")return "";
+    const gh=a.g!==lastG?`<div class="ghead">${a.g}</div>`:"";lastG=a.g;
+    const dis=(st!=="ok"&&st!=="dep");
+    const on=!dis&&S.add[a.c];
+    const qty=a.qty&&on?`<div class="qty" onclick="event.preventDefault()"><button aria-label="fewer" onclick="q(-1)">−</button><span id="qv">${S.q96127}</span><button aria-label="more" onclick="q(1)">+</button> <span style="font-size:12px;color:var(--muted)">instruments (extras get mod 59)</span></div>`:"";
+    return gh+`<label class="row ${on?"sel":""} ${dis?"dis":""}"><input type="checkbox" data-c="${a.c}" ${on?"checked":""} ${dis?"disabled":""}>
+    <div class="rbody"><div class="rhead"><span class="code">${a.c}</span><span class="rname">${a.n}</span></div><div class="rdesc">${a.d}</div>${dis?`<div class="why">${st}</div>`:(st==="dep"&&on?`<div class="why">${a.depWhy||""}</div>`:"")}${!dis&&a.info&&a.info(sc,S.add)?`<div class="why">${a.info(sc,S.add)}</div>`:""}${qty}</div>
+    <div class="chips"><span class="chip rvu">${W[a.c].toFixed(2)} wRVU</span>${chipFor(a.c,st)}${a.f?`<span class="chip freq">${a.f}</span>`:""}</div></label>`;}).join("");
+  document.querySelectorAll('#addList input[type=checkbox]').forEach(i=>i.onchange=()=>{S.add[i.dataset.c]=i.checked;render();});
+
+  document.getElementById("exclList").innerHTML=EXCL[S.p+"|"+S.t].map(e=>`
+   <div class="row"><div class="rbody"><div class="rhead"><span class="code">${e[0]}</span></div><div class="rdesc">${e[1]}</div></div></div>`).join("");
+
+  // ---- summary ----
+  const picked=[];
+  picked.push({c:S.base,mod:""});
+  if(S.t==="well"&&S.em)picked.push({c:S.em,mod:"25"});
+  ADDONS.forEach(a=>{const st=a.when(sc);if((st==="ok"||st==="dep")&&S.add[a.c]){
+    let mod="";
+    if(["99401","99402","99403","99404","99408"].includes(a.c))mod="33";
+    if((a.c==="99406"||a.c==="99407")&&S.p==="commercial")mod="33";
+    if(a.c==="99497"&&S.p==="medicare"&&S.t==="well")mod="33";
+    if(a.c==="G0136")mod="33";
+    if(a.c==="96127"&&S.p==="medicare"&&(S.add["G0444"]||S.add["G0442"]))mod="59";
+    picked.push({c:a.c,mod:mod,qty:a.qty?S.q96127:1,dep:st==="dep"});}});
+  let tot=0;const lines=picked.map(p=>{const n=p.qty||1;const v=W[p.c]*n;tot+=v;
+    return `<div class="sumline"><span class="c">${p.c}${n>1?"×"+n:""}</span><span class="n">${nameOf(p.c)}</span><span class="v">${v.toFixed(2)}</span></div>`;}).join("");
+  window.lastTot=tot;
+  document.getElementById("totRvu").innerHTML=tot.toFixed(2)+"<small> wRVUs</small>";
+  document.getElementById("lines").innerHTML=lines;
+
+  // cost
+  let coin=0,zero=0,copay=false,dep=false;
+  picked.forEach(p=>{const n=p.qty||1;
+    if(S.p==="medicare"){
+      const z=["G0402","G0438","G0439","G0444","G0442","G0443","G0447","G0537","G0446","G0445","G0011","90471","99406","99407"];
+      if(z.includes(p.c)||((p.c==="99497"||p.c==="99498"||p.c==="G0136")&&S.t==="well"))zero++;
+      else coin+=Math.round((A[p.c]||0)*.2)*n;
+    }else{
+      const z=["99385","99386","99387","99395","99396","99397","99401","99402","99403","99404","99408","90471","99406","99407"];
+      if(z.includes(p.c)||(p.c==="96127"&&S.t==="well"))zero++;
+      else if(p.c==="G2211"||(p.c==="96127"))dep=true;
+      else copay=true;
+    }});
+  const cl=[];const cb=document.getElementById("costBig");
+  if(S.p==="medicare"){
+    cb.textContent=coin?("~$"+coin):"$0";
+    document.getElementById("costLabel").textContent="est. out of pocket";
+    if(zero)cl.push(`<div class="sumline"><span class="n">Preventive services, covered in full</span><span class="v" style="color:var(--zero)">$0</span></div>`);
+    if(coin)cl.push(`<div class="sumline"><span class="n">20% coinsurance on E/M &amp; add-ons</span><span class="v" style="color:var(--cost)">~$${coin}</span></div>`);
+    document.getElementById("costNote").innerHTML=coin?"Assumes Part B deductible already met; a Medigap/supplement plan usually absorbs this.":"Nothing on this claim cost-shares — a clean $0 visit for the patient.";
+  }else{
+    cb.textContent=copay?"copay":"$0";
+    document.getElementById("costLabel").textContent="patient owes";
+    if(zero)cl.push(`<div class="sumline"><span class="n">ACA preventive (incl. mod-33 services)</span><span class="v" style="color:var(--zero)">$0</span></div>`);
+    if(copay)cl.push(`<div class="sumline"><span class="n">Office copay / deductible on the E/M</span><span class="v" style="color:var(--cost)">typ. $20–50</span></div>`);
+    if(dep)cl.push(`<div class="sumline"><span class="n">Plan-dependent items</span><span class="v" style="color:var(--warn)">varies</span></div>`);
+    document.getElementById("costNote").innerHTML="ACA-compliant plans cost-share $0 on grade A/B preventive services; grandfathered plans are the exception. Misprocessed mod-33 claims can be sent for reprocessing.";
+  }
+  document.getElementById("costLines").innerHTML=cl.join("");
+
+  document.getElementById("claim").textContent=picked.map(p=>{
+    const n=p.qty||1;let s=p.c+(p.mod?"-"+p.mod:"");
+    if(n>1)s+=" , "+p.c+"-59".repeat(1)+(n>2?" ×"+(n-1):"");
+    return s;}).join("  ·  ");
+
+  const warns=[];
+  if(S.add["96127"]&&S.p==="medicare"&&(S.add["G0444"]||S.add["G0442"]))warns.push("96127 can't bill the same instrument as G0444 / G0442 — the PHQ-9 and AUDIT are bundled into those codes (NCCI). 96127-59 is only for additional instruments like the GAD-7.");
+  if(S.add["G0446"]&&(S.add["G0537"]||S.add["G0538"]))warns.push("G0446 and the ASCVD codes (G0537/G0538) cover overlapping work — bill them for distinct services, never the same counseling minutes.");
+  if(S.add["G0443"]&&!S.add["G0442"])warns.push("G0443 requires a positive G0442 screen — documented today or previously.");
+  if(picked.some(p=>p.dep))warns.push("Amber items are payer-dependent for commercial — confirm before making them routine.");
+  if(picked.filter(p=>["99401","99406","99407","G0447","G0443","99497","G0444","G0442","G0136"].includes(p.c)).length&&(S.t==="sick"||S.em))warns.push("Counseling/screening minutes must be distinct — don't count them toward the E/M level if leveling by time.");
+  if(S.t==="well"&&S.em)warns.push("Document the problem separately: its own HPI, assessment, and plan justify the modifier-25 E/M.");
+  if(S.t==="tcm")warns.push("TCM checklist: interactive contact within 2 business days of discharge · face-to-face within 14 days (99495) or 7 days (99496) · med rec by the visit · bill after the visit; the service period runs 30 days · only one clinician bills TCM per discharge.");
+  document.getElementById("warns").innerHTML=warns.map(w=>`<div class="alert">${w}</div>`).join("");
+}
+// ---- "Which code?" helper ----
+let H={enr:null,prior:null,cage:"",cnew:"est",ptype:"est",prob:"",data:"",risk:"",time:"",days:"",tmdm:"",ptypeE:"est",probE:"",dataE:"",riskE:"",timeE:""};
+const NEWT=[[60,"99205"],[45,"99204"],[30,"99203"],[15,"99202"]];
+const ESTT=[[40,"99215"],[30,"99214"],[20,"99213"],[10,"99212"]];
+const NEWL={2:"99202",3:"99203",4:"99204",5:"99205"}, ESTL={2:"99212",3:"99213",4:"99214",5:"99215"};
+function hseg(id,opts,cur){return `<span class="hseg" data-h="${id}">`+opts.map(o=>`<button data-v="${o[0]}" class="${cur===o[0]?"on":""}">${o[1]}</button>`).join("")+`</span>`;}
+function helperHTML(){
+  if(!S.help)return "";
+  if(S.t==="well"&&S.p==="medicare")return `<div class="helper">
+    <div class="hq">Is the patient within their first 12 months of Part B enrollment?</div>${hseg("enr",[["yes","Yes"],["no","No"]],H.enr)}
+    <div class="hq">Have they ever had an AWV (G0438 or G0439) before — with any practice?</div>${hseg("prior",[["yes","Yes"],["no","No / unknown"]],H.prior)}
+    <div id="hrec"></div></div>`;
+  if(S.t==="well")return `<div class="helper"><div class="hgrid">
+    <div><div class="hq">Patient age</div><input type="number" id="hAge" min="18" max="120" value="${H.cage}" placeholder="e.g. 52"></div>
+    <div><div class="hq">New to the practice (3-yr rule)?</div>${hseg("cnew",[["new","New"],["est","Established"]],H.cnew)}</div>
+    </div><div id="hrec"></div></div>`;
+  if(S.t==="tcm")return `<div class="helper">
+    <div class="hq">Days from discharge to the face-to-face visit</div><input type="number" id="hDays" min="0" max="60" value="${H.days}" placeholder="e.g. 5" style="max-width:180px">
+    <div class="hq">Medical decision making — judged over the whole 30-day service period, not just the visit</div>
+    <div class="hopt ${H.tmdm==="mod"?"sel":""}" data-tmdm="mod" tabindex="0" role="button"><b>Moderate</b> — exacerbated or progressing chronic illness, a new problem needing workup, or prescription &amp; med-rec management. The typical discharge lands here.</div>
+    <div class="hopt ${H.tmdm==="high"?"sel":""}" data-tmdm="high" tabindex="0" role="button"><b>High</b> — severe exacerbation, a threat to life or bodily function, drug therapy needing intensive toxicity monitoring (new warfarin, amiodarone), or active decisions about rehospitalization / escalating or de-escalating care.</div>
+    <div id="hrec"></div></div>`;
+  return `<div class="helper">
+    <div class="hq">Patient type</div>${hseg("ptype",[["new","New (not seen in 3 yrs)"],["est","Established"]],H.ptype)}
+    <div class="hgrid" style="margin-top:10px">
+    <div><div class="hq">Problems addressed</div><select id="hProb">
+      <option value="">— pick the best fit —</option>
+      <option value="2" ${H.prob==="2"?"selected":""}>One self-limited or minor problem</option>
+      <option value="3" ${H.prob==="3"?"selected":""}>2+ minor problems · 1 stable chronic illness · acute uncomplicated illness</option>
+      <option value="4" ${H.prob==="4"?"selected":""}>Chronic illness w/ exacerbation · 2+ stable chronic illnesses · new undiagnosed problem · acute illness w/ systemic sx</option>
+      <option value="5" ${H.prob==="5"?"selected":""}>Severe exacerbation · threat to life or bodily function</option></select></div>
+    <div><div class="hq">Data reviewed / ordered</div><select id="hData">
+      <option value="">— pick the best fit —</option>
+      <option value="2" ${H.data==="2"?"selected":""}>Minimal or none</option>
+      <option value="3" ${H.data==="3"?"selected":""}>Any 2 of: external notes, test results, test orders — or an independent historian</option>
+      <option value="4" ${H.data==="4"?"selected":""}>Independently interpreted a test · discussed with an external clinician · or 3 across notes/tests/historian</option>
+      <option value="5" ${H.data==="5"?"selected":""}>Two of the three level-4 categories</option></select></div>
+    <div><div class="hq">Risk of management chosen</div><select id="hRisk">
+      <option value="">— pick the best fit —</option>
+      <option value="2" ${H.risk==="2"?"selected":""}>Minimal</option>
+      <option value="3" ${H.risk==="3"?"selected":""}>OTC meds · minor procedure, no risk factors</option>
+      <option value="4" ${H.risk==="4"?"selected":""}>Prescription drug management · SDOH limiting care · procedure w/ risk factors</option>
+      <option value="5" ${H.risk==="5"?"selected":""}>Toxicity-monitored drug · hospitalization decision · DNR/de-escalation · parenteral controlled substances</option></select></div>
+    <div><div class="hq">Total time on the date (min) — optional</div><input type="number" id="hTime" min="0" max="200" value="${H.time}" placeholder="incl. chart review &amp; notes"></div>
+    </div><div id="hrec"></div></div>`;
+}
+function hRec(){
+  const el=document.getElementById("hrec");if(!el)return;
+  const rec=(code,why)=>{el.className="hrec";el.innerHTML=code?`${why}<br><span class="code">${code}</span> — ${W[code].toFixed(2)} wRVU <button onclick="applyBase('${code}')">Use it</button>`:why;};
+  el.className="";
+  if(S.t==="well"&&S.p==="medicare"){
+    if(!H.enr){el.innerHTML="";return;}
+    if(H.enr==="yes")rec("G0402","Within 12 months of enrollment → the once-ever Welcome to Medicare visit (an AWV isn't payable yet).");
+    else if(!H.prior){el.innerHTML="";return;}
+    else if(H.prior==="yes")rec("G0439","Enrolled &gt;12 months with a prior AWV on record (11+ full months ago) →");
+    else rec("G0438","Enrolled &gt;12 months, first-ever AWV → (check claims history first — G0438 is once per lifetime and denies if anyone billed it before)");
+    return;
+  }
+  if(S.t==="well"){
+    const a=parseInt(H.cage);if(!a){el.innerHTML="";return;}
+    const band=a>=65?2:(a>=40?1:0);
+    rec((H.cnew==="new"?["99385","99386","99387"]:["99395","99396","99397"])[band],`Age ${a}, ${H.cnew==="new"?"new":"established"} patient →`);
+    return;
+  }
+  if(S.t==="tcm"){
+    const d=parseInt(H.days);if(isNaN(d)||!H.tmdm){el.innerHTML="";return;}
+    if(d>14){rec(null,"More than 14 days to the visit — outside the TCM window. Bill the visit as a regular E/M instead.");return;}
+    if(H.tmdm==="high"&&d<=7)rec("99496","High-complexity MDM and seen within 7 days →");
+    else if(H.tmdm==="high")rec("99495","High-complexity MDM but seen on day 8–14 — 99496 needs both, so it drops to");
+    else rec("99495","Moderate-complexity MDM, seen within 14 days →");
+    return;
+  }
+  const L=H.ptype==="new"?NEWL:ESTL, T=H.ptype==="new"?NEWT:ESTT;
+  const m=[H.prob,H.data,H.risk].map(Number).filter(x=>x>0);
+  let mdm=null;if(m.length===3)mdm=m.sort()[1];
+  let tl=null;const t=parseInt(H.time);
+  if(!isNaN(t)&&t>0){for(const[th,c]of T){if(t>=th){tl=c;break;}}}
+  if(mdm===null&&tl===null){el.innerHTML="";return;}
+  const mc=mdm?L[mdm]:null;
+  let code,why;
+  if(mc&&tl)code=(parseInt(tl)>parseInt(mc))?tl:mc,why=`MDM (2 of 3 rule) points to ${mc}; ${t} min points to ${tl} — bill whichever is higher:`;
+  else if(mc)why=`MDM (middle of your three picks) →`,code=mc;
+  else if(tl)why=`${t} minutes of total same-date time →`,code=tl;
+  else{el.innerHTML=`<div class="hrec">${t} min is below the minimum for a timed code — level by MDM instead.</div>`;return;}
+  if(!code){rec(null,`${t} min is below the minimum for a timed code (${H.ptype==="new"?"15":"10"} min) — level by MDM.`);return;}
+  rec(code,why);
+}
+function emHelperHTML(){
+  if(!S.helpEM)return "";
+  return `<div class="helper">
+    <div class="hq">Patient type</div>${hseg("ptypeE",[["new","New (not seen in 3 yrs)"],["est","Established"]],H.ptypeE)}
+    <div class="hgrid" style="margin-top:10px">
+    <div><div class="hq">Problems addressed</div><select id="hProbE">
+      <option value="">— pick the best fit —</option>
+      <option value="2" ${H.probE==="2"?"selected":""}>One self-limited or minor problem</option>
+      <option value="3" ${H.probE==="3"?"selected":""}>2+ minor problems · 1 stable chronic illness · acute uncomplicated illness</option>
+      <option value="4" ${H.probE==="4"?"selected":""}>Chronic illness w/ exacerbation · 2+ stable chronic illnesses · new undiagnosed problem · acute illness w/ systemic sx</option>
+      <option value="5" ${H.probE==="5"?"selected":""}>Severe exacerbation · threat to life or bodily function</option></select></div>
+    <div><div class="hq">Data reviewed / ordered</div><select id="hDataE">
+      <option value="">— pick the best fit —</option>
+      <option value="2" ${H.dataE==="2"?"selected":""}>Minimal or none</option>
+      <option value="3" ${H.dataE==="3"?"selected":""}>Any 2 of: external notes, test results, test orders — or an independent historian</option>
+      <option value="4" ${H.dataE==="4"?"selected":""}>Independently interpreted a test · discussed with an external clinician · or 3 across notes/tests/historian</option>
+      <option value="5" ${H.dataE==="5"?"selected":""}>Two of the three level-4 categories</option></select></div>
+    <div><div class="hq">Risk of management chosen</div><select id="hRiskE">
+      <option value="">— pick the best fit —</option>
+      <option value="2" ${H.riskE==="2"?"selected":""}>Minimal</option>
+      <option value="3" ${H.riskE==="3"?"selected":""}>OTC meds · minor procedure, no risk factors</option>
+      <option value="4" ${H.riskE==="4"?"selected":""}>Prescription drug management · SDOH limiting care · procedure w/ risk factors</option>
+      <option value="5" ${H.riskE==="5"?"selected":""}>Toxicity-monitored drug · hospitalization decision · DNR/de-escalation · parenteral controlled substances</option></select></div>
+    <div><div class="hq">E/M-only minutes — optional</div><input type="number" id="hTimeE" min="0" max="200" value="${H.timeE}" placeholder="excl. the physical's time"></div>
+    </div><div id="hrecE"></div></div>`;
+}
+function hRecEM(){
+  const el=document.getElementById("hrecE");if(!el)return;
+  el.className="";
+  const L=H.ptypeE==="new"?NEWL:ESTL, T=H.ptypeE==="new"?NEWT:ESTT;
+  const m=[H.probE,H.dataE,H.riskE].map(Number).filter(x=>x>0);
+  let mdm=null;if(m.length===3)mdm=m.sort()[1];
+  let tl=null;const t=parseInt(H.timeE);
+  if(!isNaN(t)&&t>0){for(const[th,c]of T){if(t>=th){tl=c;break;}}}
+  if(mdm===null&&tl===null){el.innerHTML="";return;}
+  const mc=mdm?L[mdm]:null;
+  let code=null,why="";
+  if(mc&&tl){code=(parseInt(tl)>parseInt(mc))?tl:mc;why=`MDM points to ${mc}; ${t} min points to ${tl} — bill whichever is higher:`;}
+  else if(mc){code=mc;why="MDM (middle of your three picks) →";}
+  else if(tl){code=tl;why=`${t} minutes of E/M-only time →`;}
+  el.className="hrec";
+  if(!code){el.innerHTML=`${t} min is below the minimum for a timed code — level by MDM instead.`;return;}
+  if(code==="99202"){el.innerHTML="A straightforward minor problem alongside a physical rarely supports a separate mod-25 E/M — consider folding it into the preventive visit.";return;}
+  el.innerHTML=`${why}<br><span class="code">${code}-25</span> — ${W[code].toFixed(2)} wRVU <button onclick="applyEM('${code}')">Use it</button>`;
+}
+function applyEM(c){S.em=c;render();}
+function bindHelper(){
+  document.querySelectorAll(".helper .hseg").forEach(sg=>{sg.querySelectorAll("button").forEach(b=>{b.onclick=()=>{H[sg.dataset.h]=b.dataset.v;sg.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));if(sg.dataset.h==="enr"||sg.dataset.h==="prior"){render();return;}if(sg.dataset.h==="ptypeE"){hRecEM();return;}hRec();};});});
+  document.querySelectorAll(".helper .hopt").forEach(o=>{const pick=()=>{H.tmdm=o.dataset.tmdm;document.querySelectorAll(".helper .hopt").forEach(x=>x.classList.toggle("sel",x===o));hRec();};o.onclick=pick;o.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();pick();}};});
+  const map={hAge:"cage",hDays:"days",hProb:"prob",hData:"data",hRisk:"risk",hTime:"time",hProbE:"probE",hDataE:"dataE",hRiskE:"riskE",hTimeE:"timeE"};
+  Object.entries(map).forEach(([id,k])=>{const e=document.getElementById(id);if(e)e.oninput=()=>{H[k]=e.value;if(id.endsWith("E")){hRecEM();}else{hRec();}};});
+  hRec();hRecEM();
+}
+function applyBase(c){S.base=c;render();}
+function nameOf(c){const all=[...BASES["medicare|well"],...BASES["commercial|well"],...BASES["sick"],...BASES["tcm"]];const b=all.find(x=>x.c===c);if(b)return b.n;const a=ADDONS.find(x=>x.c===c);return a?a.n:"";}
+function q(d){S.q96127=Math.min(4,Math.max(1,S.q96127+d));render();}
+function annualize(){
+  const g=id=>parseFloat(document.getElementById(id).value)||0;
+  const tot=g("anHd")*g("anPpd")*g("anWpv")*g("anWk");
+  const wk=g("anHd")*g("anPpd")*g("anWpv");
+  document.getElementById("anTot").textContent=Math.round(tot).toLocaleString();
+  document.getElementById("anWkOut").textContent=Math.round(wk).toLocaleString();
+  const pct=tot/4850*100;
+  document.getElementById("anMed").textContent=Math.round(pct)+"%";
+}
+["anHd","anPpd","anWpv","anWk"].forEach(i=>document.getElementById(i).addEventListener("input",annualize));
+document.getElementById("anUse").onclick=()=>{document.getElementById("anWpv").value=(window.lastTot||3.5).toFixed(2);annualize();};
+render();annualize();
+</script>
+
+</body>
+</html>
