@@ -110,6 +110,20 @@ select{font:inherit;background:var(--surface);color:var(--ink);border:1px solid 
 .excl .row:hover{background:transparent}
 footer{margin-top:30px;color:var(--muted);font-size:12.5px;max-width:72ch}
 @media (prefers-reduced-motion: no-preference){.card,.chip{transition:background .15s,border-color .15s}}
+button,select,input,.row,.hopt,.helpbtn{touch-action:manipulation}
+@media(max-width:600px){
+  body{padding:20px 12px 60px}
+  .seg{flex-wrap:wrap}
+  .seg button{padding:7px 12px;font-size:13.5px;white-space:nowrap}
+  #baseTitle,#emCard h2{display:block!important}
+  .helpbtn{float:none;display:inline-block;margin:0 0 12px}
+  .row{flex-wrap:wrap}
+  .rbody{flex:1 1 200px}
+  .chips{flex-direction:row;flex-wrap:wrap;width:100%;order:3;margin:8px 0 0 30px;align-items:center;justify-content:flex-start}
+  select,.helper select,.helper input[type=number],#emSel,input[type=number]{font-size:16px}
+  .qty button{width:32px;height:32px}
+  .total{font-size:36px}
+}
 </style>
 
 <div class="wrap">
