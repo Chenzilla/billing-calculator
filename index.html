@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>What Can I Bill?</title>
-<meta name="description" content="Interactive primary-care billing calculator — Medicare vs commercial, wellness, problem, and TCM visits, with wRVUs, patient cost, and claim modifiers.">
+<meta name="description" content="Interactive primary-care billing calculator — Medicare vs commercial, wellness, problem, and TCM visits, in person or telehealth, with wRVUs, patient cost, and claim modifiers.">
 </head>
 <body>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -141,6 +141,10 @@ button,select,input,.row,.hopt,.helpbtn{touch-action:manipulation}
     <button data-v="well" class="on"><span class="dot"></span>Wellness visit</button>
     <button data-v="sick"><span class="dot"></span>Sick / problem visit</button>
     <button data-v="tcm"><span class="dot"></span>TCM (post-discharge)</button>
+  </div>
+  <div class="seg" id="segMode">
+    <button data-v="office" class="on"><span class="dot"></span>In person</button>
+    <button data-v="tele"><span class="dot"></span>Telehealth</button>
   </div>
 </div>
 
@@ -313,7 +317,10 @@ const EXCL={
   ["99381–99397","A preventive visit due during the TCM window is billable, but as its own encounter."]]
 };
 
-let S={p:"medicare",t:"well",base:"G0439",em:"",add:{},q96127:1,help:false};
+let S={p:"medicare",t:"well",base:"G0439",em:"",add:{},q96127:1,help:false,mode:"office"};
+const TELEB={"99401":"In-person only per coding review (a specific payer's telehealth list may override)","99402":"In-person only per coding review (a specific payer's telehealth list may override)","99403":"In-person only per coding review (a specific payer's telehealth list may override)","99404":"In-person only per coding review (a specific payer's telehealth list may override)","90471":"Vaccine administration requires an in-person visit"};
+const TELEV={"G0537":"Telehealth status unverified for this new code — confirm with billing","G0538":"Telehealth status unverified for this new code — confirm with billing","99408":"Telehealth coverage is payer-dependent — confirm before billing"};
+function statFor(a,sc){let st=a.when(sc);if(S.mode!=="tele")return st;if(st!=="ok"&&st!=="dep")return st;if(TELEB[a.c])return TELEB[a.c];if(TELEV[a.c])return "dep";return st;}
 
 function baseList(){return S.t==="well"?BASES[S.p+"|well"]:BASES[S.t==="tcm"?"tcm":"sick"];}
 function scen(){return {p:S.p,t:S.t,base:S.base,em:S.em,hasEM:S.t==="sick"||!!S.em};}
@@ -371,14 +378,15 @@ function render(){
 
   const sc=scen();
   let lastG="";
+  document.querySelectorAll("#segMode button").forEach(b=>{b.classList.toggle("on",b.dataset.v===S.mode);b.onclick=()=>{if(S.mode===b.dataset.v)return;S.mode=b.dataset.v;render();};});
   document.getElementById("addList").innerHTML=ADDONS.map(a=>{
-    const st=a.when(sc);if(st==="no")return "";
+    const st=statFor(a,sc);if(st==="no")return "";
     const gh=a.g!==lastG?`<div class="ghead">${a.g}</div>`:"";lastG=a.g;
     const dis=(st!=="ok"&&st!=="dep");
     const on=!dis&&S.add[a.c];
     const qty=a.qty&&on?`<div class="qty" onclick="event.preventDefault()"><button aria-label="fewer" onclick="q(-1)">−</button><span id="qv">${S.q96127}</span><button aria-label="more" onclick="q(1)">+</button> <span style="font-size:12px;color:var(--muted)">instruments (extras get mod 59)</span></div>`:"";
     return gh+`<label class="row ${on?"sel":""} ${dis?"dis":""}"><input type="checkbox" data-c="${a.c}" ${on?"checked":""} ${dis?"disabled":""}>
-    <div class="rbody"><div class="rhead"><span class="code">${a.c}</span><span class="rname">${a.n}</span></div><div class="rdesc">${a.d}</div>${dis?`<div class="why">${st}</div>`:(st==="dep"&&on?`<div class="why">${a.depWhy||""}</div>`:"")}${!dis&&a.info&&a.info(sc,S.add)?`<div class="why">${a.info(sc,S.add)}</div>`:""}${qty}</div>
+    <div class="rbody"><div class="rhead"><span class="code">${a.c}</span><span class="rname">${a.n}</span></div><div class="rdesc">${a.d}</div>${dis?`<div class="why">${st}</div>`:(st==="dep"&&on?`<div class="why">${(S.mode==="tele"&&TELEV[a.c])||a.depWhy||""}</div>`:"")}${!dis&&a.info&&a.info(sc,S.add)?`<div class="why">${a.info(sc,S.add)}</div>`:""}${qty}</div>
     <div class="chips"><span class="chip rvu">${W[a.c].toFixed(2)} wRVU</span>${chipFor(a.c,st)}${a.f?`<span class="chip freq">${a.f}</span>`:""}</div></label>`;}).join("");
   document.querySelectorAll('#addList input[type=checkbox]').forEach(i=>i.onchange=()=>{S.add[i.dataset.c]=i.checked;render();});
 
@@ -389,7 +397,7 @@ function render(){
   const picked=[];
   picked.push({c:S.base,mod:""});
   if(S.t==="well"&&S.em)picked.push({c:S.em,mod:"25"});
-  ADDONS.forEach(a=>{const st=a.when(sc);if((st==="ok"||st==="dep")&&S.add[a.c]){
+  ADDONS.forEach(a=>{const st=statFor(a,sc);if((st==="ok"||st==="dep")&&S.add[a.c]){
     let mod="";
     if(["99401","99402","99403","99404","99408"].includes(a.c))mod="33";
     if((a.c==="99406"||a.c==="99407")&&S.p==="commercial")mod="33";
@@ -435,10 +443,15 @@ function render(){
 
   document.getElementById("claim").textContent=picked.map(p=>{
     const n=p.qty||1;let s=p.c+(p.mod?"-"+p.mod:"");
+    if(S.mode==="tele"&&p.c!=="96127")s+="-95";
     if(n>1)s+=" , "+p.c+"-59".repeat(1)+(n>2?" ×"+(n-1):"");
     return s;}).join("  ·  ");
 
   const warns=[];
+  if(S.mode==="tele"){
+    warns.push("Telehealth documentation every visit: patient consent · patient location (state matters for licensure) · modality, with reason if audio-only (mod 93) · POS 10 (home).");
+    if(S.t==="well"&&S.p==="commercial")warns.push("Many commercial payers require preventive physicals (9938x/9939x) in person — verify this plan's telehealth policy before billing the base visit by video.");
+  }
   if(S.add["96127"]&&S.p==="medicare"&&(S.add["G0444"]||S.add["G0442"]))warns.push("96127 can't bill the same instrument as G0444 / G0442 — the PHQ-9 and AUDIT are bundled into those codes (NCCI). 96127-59 is only for additional instruments like the GAD-7.");
   if(S.add["G0446"]&&(S.add["G0537"]||S.add["G0538"]))warns.push("G0446 and the ASCVD codes (G0537/G0538) cover overlapping work — bill them for distinct services, never the same counseling minutes.");
   if(S.add["G0443"]&&!S.add["G0442"])warns.push("G0443 requires a positive G0442 screen — documented today or previously.");
